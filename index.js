@@ -3,8 +3,6 @@
  */
 
 var events = require('events');
-var transform = require('transform-property');
-var tap = require('tap');
 
 /**
  * Export `Pinch`
