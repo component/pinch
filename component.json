@@ -3,14 +3,9 @@
   "repo": "component/pinch",
   "description": "pinch in/out on elements",
   "version": "0.0.1",
-  "keywords": [],
+  "keywords": ["pinch", "zoom", "mobile", "tablet"],
   "dependencies": {
-    "component/events": "*",
-    "component/transform-property": "*",
-    "component/tap": "*"
-  },
-  "development": {
-    "component/touchit": "*"
+    "component/events": "*"
   },
   "license": "MIT",
   "main": "index.js",
