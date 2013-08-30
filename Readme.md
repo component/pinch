@@ -1,7 +1,7 @@
 
 # pinch
 
-  pinch in/out on elements
+  pinch in and out on elements on handheld devices.
 
 ## Installation
 
