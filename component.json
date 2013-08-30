@@ -1,0 +1,20 @@
+{
+  "name": "pinch",
+  "repo": "component/pinch",
+  "description": "pinch in/out on elements",
+  "version": "0.0.1",
+  "keywords": [],
+  "dependencies": {
+    "component/events": "*",
+    "component/transform-property": "*",
+    "component/tap": "*"
+  },
+  "development": {
+    "component/touchit": "*"
+  },
+  "license": "MIT",
+  "main": "index.js",
+  "scripts": [
+    "index.js"
+  ]
+}
