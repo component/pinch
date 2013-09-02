@@ -42,6 +42,10 @@ The event object `e` is augmented with following keys:
 
   Unbind
 
+## TODO
+
+* add e.rotate support for android
+
 ## License
 
   MIT
