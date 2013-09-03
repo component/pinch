@@ -3,7 +3,7 @@
  */
 
 module.exports = function(e) {
-  // anything property it doesn't find on the object
+  // any property it doesn't find on the object
   // itself, look up prototype for original `e`
   E.prototype = e;
   return new E();
