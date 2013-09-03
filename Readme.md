@@ -44,7 +44,7 @@ The event object `e` is augmented with following keys:
 
 ## TODO
 
-* add e.rotate support for android
+* add `e.rotate` support for android
 
 ## License
 

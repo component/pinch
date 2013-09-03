@@ -3,6 +3,7 @@
  */
 
 var events = require('events');
+var E = require('./e');
 
 /**
  * Export `Pinch`
@@ -101,8 +102,11 @@ Pinch.prototype.ontouchmove = function(e) {
   var dist = distance.apply(null, coords);
   var mid = midpoint.apply(null, coords);
 
+  // make event properties mutable
+  e = E(e);
+
   // iphone does scale natively, just use that
-  e.scale = e.scale ? e.scale : dist / this.distance * this.scale;
+  e.scale = dist / this.distance * this.scale;
   e.x = mid.x;
   e.y = mid.y;
 
