@@ -27,6 +27,8 @@ function Pinch(el, fn) {
   this.fn = fn || function(){};
   this.midpoint = null;
   this.scale = 1;
+  this.lastScale = 1;
+  this.pinching = false;
   this.events = events(el, this);
   this.events.bind('touchstart');
   this.events.bind('touchmove');
@@ -52,6 +54,7 @@ Pinch.prototype.ontouchstart = function(e) {
     coords.push(finger.pageX, finger.pageY);
   }
 
+  this.pinching = true;
   this.distance = distance(coords);
   this.midpoint = midpoint(coords);
   return this;
@@ -67,7 +70,7 @@ Pinch.prototype.ontouchstart = function(e) {
 
 Pinch.prototype.ontouchmove = function(e) {
   var touches = e.touches;
-  if (!touches || touches.length != 2) return this;
+  if (!touches || touches.length != 2 || !this.pinching) return this;
 
   var coords = [];
   for(var i = 0, finger; finger = touches[i]; i++) {
@@ -103,8 +106,9 @@ Pinch.prototype.ontouchmove = function(e) {
 
 Pinch.prototype.ontouchend = function(e) {
   var touches = e.touches;
-  if (!touches || touches.length == 2) return this;
+  if (!touches || touches.length == 2 || !this.pinching) return this;
   this.scale = this.lastScale;
+  this.pinching = false;
   return this;
 };
 
