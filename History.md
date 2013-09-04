@@ -1,4 +1,9 @@
 
+0.0.5 / 2013-09-04 
+==================
+
+ * added pinching to only call touchmove and touchend when pinching
+
 0.0.4 / 2013-09-03 
 ==================
 
