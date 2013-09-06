@@ -45,9 +45,9 @@ function Pinch(el, fn) {
  */
 
 Pinch.prototype.ontouchstart = function(e) {
-  e.preventDefault();
   var touches = e.touches;
   if (!touches || 2 != touches.length) return this;
+  e.preventDefault();
 
   var coords = [];
   for(var i = 0, finger; finger = touches[i]; i++) {
