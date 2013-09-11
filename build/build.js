@@ -540,6 +540,7 @@ require.register("pinch/index.js", Function("exports, require, module",
  */\n\
 \n\
 var events = require('events');\n\
+var E = require('./e');\n\
 \n\
 /**\n\
  * Export `Pinch`\n\
@@ -562,6 +563,9 @@ function Pinch(el, fn) {\n\
   this.parent = el.parentNode;\n\
   this.fn = fn || function(){};\n\
   this.midpoint = null;\n\
+  this.scale = 1;\n\
+  this.lastScale = 1;\n\
+  this.pinching = false;\n\
   this.events = events(el, this);\n\
   this.events.bind('touchstart');\n\
   this.events.bind('touchmove');\n\
@@ -578,31 +582,18 @@ function Pinch(el, fn) {\n\
  */\n\
 \n\
 Pinch.prototype.ontouchstart = function(e) {\n\
-  e.preventDefault();\n\
-  this.scale = 1;\n\
   var touches = e.touches;\n\
-  if (!touches.length) return this;\n\
+  if (!touches || 2 != touches.length) return this;\n\
+  e.preventDefault();\n\
 \n\
-  var changed = e.changedTouches;\n\
-  for (var i = 0, len = changed.length; i < len; i++) {\n\
-    this.fingers[changed[i].identifier] = {\n\
-      x: changed[i].pageX,\n\
-      y: changed[i].pageY\n\
-    };\n\
+  var coords = [];\n\
+  for(var i = 0, finger; finger = touches[i]; i++) {\n\
+    coords.push(finger.pageX, finger.pageY);\n\
   }\n\
 \n\
-  if (touches.length == 2) {\n\
-    var coords = [];\n\
-\n\
-    for(var id in this.fingers) {\n\
-      var finger = this.fingers[id];\n\
-      coords.push(finger.x);\n\
-      coords.push(finger.y);\n\
-    }\n\
-\n\
-    this.distance = distance.apply(null, coords);\n\
-    this.midpoint = midpoint.apply(null, coords);\n\
-  }\n\
+  this.pinching = true;\n\
+  this.distance = distance(coords);\n\
+  this.midpoint = midpoint(coords);\n\
   return this;\n\
 };\n\
 \n\
@@ -616,35 +607,29 @@ Pinch.prototype.ontouchstart = function(e) {\n\
 \n\
 Pinch.prototype.ontouchmove = function(e) {\n\
   var touches = e.touches;\n\
-  if (touches.length != 2) return this;\n\
-  var changed = e.changedTouches;\n\
-\n\
-  for (var i = 0, len = changed.length; i < len; i++) {\n\
-    var finger = this.fingers[changed[i].identifier];\n\
-    if (undefined === finger) continue;\n\
-    this.fingers[changed[i].identifier] = {\n\
-      x: changed[i].pageX,\n\
-      y: changed[i].pageY\n\
-    };\n\
-  }\n\
+  if (!touches || touches.length != 2 || !this.pinching) return this;\n\
 \n\
   var coords = [];\n\
-  for(var id in this.fingers) {\n\
-    var finger = this.fingers[id];\n\
-    coords.push(finger.x);\n\
-    coords.push(finger.y);\n\
+  for(var i = 0, finger; finger = touches[i]; i++) {\n\
+    coords.push(finger.pageX, finger.pageY);\n\
   }\n\
 \n\
-  var dist = distance.apply(null, coords);\n\
-  var mid = midpoint.apply(null, coords);\n\
+  var changed = e.changedTouches;\n\
+\n\
+  var dist = distance(coords);\n\
+  var mid = midpoint(coords);\n\
+\n\
+  // make event properties mutable\n\
+  e = E(e);\n\
 \n\
   // iphone does scale natively, just use that\n\
-  e.scale = e.scale ? e.scale : dist / this.distance * this.scale;\n\
+  e.scale = dist / this.distance * this.scale;\n\
   e.x = mid.x;\n\
   e.y = mid.y;\n\
 \n\
   this.fn(e);\n\
 \n\
+  this.lastScale = e.scale;\n\
   return this;\n\
 };\n\
 \n\
@@ -657,10 +642,10 @@ Pinch.prototype.ontouchmove = function(e) {\n\
  */\n\
 \n\
 Pinch.prototype.ontouchend = function(e) {\n\
-  var changed = e.changedTouches;\n\
-  for (var i = 0, len = changed.length; i < len; i++) {\n\
-    delete this.fingers[changed[i].identifier];\n\
-  }\n\
+  var touches = e.touches;\n\
+  if (!touches || touches.length == 2 || !this.pinching) return this;\n\
+  this.scale = this.lastScale;\n\
+  this.pinching = false;\n\
   return this;\n\
 };\n\
 \n\
@@ -680,38 +665,51 @@ Pinch.prototype.unbind = function() {\n\
 /**\n\
  * Get the distance between two points\n\
  *\n\
- * @param {Number} x1\n\
- * @param {Number} y1\n\
- * @param {Number} x2\n\
- * @param {Number} y2\n\
+ * @param {Array} arr\n\
  * @return {Number}\n\
  * @api private\n\
  */\n\
 \n\
-function distance(x1, y1, x2, y2) {\n\
-  var x = Math.pow(x1 - x2, 2);\n\
-  var y = Math.pow(y1 - y2, 2);\n\
+function distance(arr) {\n\
+  var x = Math.pow(arr[0] - arr[2], 2);\n\
+  var y = Math.pow(arr[1] - arr[3], 2);\n\
   return Math.sqrt(x + y);\n\
 }\n\
 \n\
 /**\n\
  * Get the midpoint\n\
  *\n\
- * @param {Number} x1\n\
- * @param {Number} y1\n\
- * @param {Number} x2\n\
- * @param {Number} y2\n\
+ * @param {Array} arr\n\
  * @return {Object} coords\n\
  * @api private\n\
  */\n\
 \n\
-function midpoint(x1, y1, x2, y2) {\n\
+function midpoint(arr) {\n\
   var coords = {};\n\
-  coords.x = (x1 + x2) / 2;\n\
-  coords.y = (y1 + y2) / 2;\n\
+  coords.x = (arr[0] + arr[2]) / 2;\n\
+  coords.y = (arr[1] + arr[3]) / 2;\n\
   return coords;\n\
 }\n\
 //@ sourceURL=pinch/index.js"
+));
+require.register("pinch/e.js", Function("exports, require, module",
+"/**\n\
+ * Expose `E`\n\
+ */\n\
+\n\
+module.exports = function(e) {\n\
+  // any property it doesn't find on the object\n\
+  // itself, look up prototype for original `e`\n\
+  E.prototype = e;\n\
+  return new E();\n\
+};\n\
+\n\
+/**\n\
+ * Initialize `E`\n\
+ */\n\
+\n\
+function E() {}\n\
+//@ sourceURL=pinch/e.js"
 ));
 
 

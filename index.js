@@ -3,6 +3,7 @@
  */
 
 var events = require('events');
+var E = require('./e');
 
 /**
  * Export `Pinch`
@@ -25,6 +26,9 @@ function Pinch(el, fn) {
   this.parent = el.parentNode;
   this.fn = fn || function(){};
   this.midpoint = null;
+  this.scale = 1;
+  this.lastScale = 1;
+  this.pinching = false;
   this.events = events(el, this);
   this.events.bind('touchstart');
   this.events.bind('touchmove');
@@ -41,31 +45,18 @@ function Pinch(el, fn) {
  */
 
 Pinch.prototype.ontouchstart = function(e) {
-  e.preventDefault();
-  this.scale = 1;
   var touches = e.touches;
-  if (!touches.length) return this;
+  if (!touches || 2 != touches.length) return this;
+  e.preventDefault();
 
-  var changed = e.changedTouches;
-  for (var i = 0, len = changed.length; i < len; i++) {
-    this.fingers[changed[i].identifier] = {
-      x: changed[i].pageX,
-      y: changed[i].pageY
-    };
+  var coords = [];
+  for(var i = 0, finger; finger = touches[i]; i++) {
+    coords.push(finger.pageX, finger.pageY);
   }
 
-  if (touches.length == 2) {
-    var coords = [];
-
-    for(var id in this.fingers) {
-      var finger = this.fingers[id];
-      coords.push(finger.x);
-      coords.push(finger.y);
-    }
-
-    this.distance = distance.apply(null, coords);
-    this.midpoint = midpoint.apply(null, coords);
-  }
+  this.pinching = true;
+  this.distance = distance(coords);
+  this.midpoint = midpoint(coords);
   return this;
 };
 
@@ -79,35 +70,29 @@ Pinch.prototype.ontouchstart = function(e) {
 
 Pinch.prototype.ontouchmove = function(e) {
   var touches = e.touches;
-  if (touches.length != 2) return this;
-  var changed = e.changedTouches;
-
-  for (var i = 0, len = changed.length; i < len; i++) {
-    var finger = this.fingers[changed[i].identifier];
-    if (undefined === finger) continue;
-    this.fingers[changed[i].identifier] = {
-      x: changed[i].pageX,
-      y: changed[i].pageY
-    };
-  }
+  if (!touches || touches.length != 2 || !this.pinching) return this;
 
   var coords = [];
-  for(var id in this.fingers) {
-    var finger = this.fingers[id];
-    coords.push(finger.x);
-    coords.push(finger.y);
+  for(var i = 0, finger; finger = touches[i]; i++) {
+    coords.push(finger.pageX, finger.pageY);
   }
 
-  var dist = distance.apply(null, coords);
-  var mid = midpoint.apply(null, coords);
+  var changed = e.changedTouches;
+
+  var dist = distance(coords);
+  var mid = midpoint(coords);
+
+  // make event properties mutable
+  e = E(e);
 
   // iphone does scale natively, just use that
-  e.scale = e.scale ? e.scale : dist / this.distance * this.scale;
+  e.scale = dist / this.distance * this.scale;
   e.x = mid.x;
   e.y = mid.y;
 
   this.fn(e);
 
+  this.lastScale = e.scale;
   return this;
 };
 
@@ -120,10 +105,10 @@ Pinch.prototype.ontouchmove = function(e) {
  */
 
 Pinch.prototype.ontouchend = function(e) {
-  var changed = e.changedTouches;
-  for (var i = 0, len = changed.length; i < len; i++) {
-    delete this.fingers[changed[i].identifier];
-  }
+  var touches = e.touches;
+  if (!touches || touches.length == 2 || !this.pinching) return this;
+  this.scale = this.lastScale;
+  this.pinching = false;
   return this;
 };
 
@@ -143,34 +128,28 @@ Pinch.prototype.unbind = function() {
 /**
  * Get the distance between two points
  *
- * @param {Number} x1
- * @param {Number} y1
- * @param {Number} x2
- * @param {Number} y2
+ * @param {Array} arr
  * @return {Number}
  * @api private
  */
 
-function distance(x1, y1, x2, y2) {
-  var x = Math.pow(x1 - x2, 2);
-  var y = Math.pow(y1 - y2, 2);
+function distance(arr) {
+  var x = Math.pow(arr[0] - arr[2], 2);
+  var y = Math.pow(arr[1] - arr[3], 2);
   return Math.sqrt(x + y);
 }
 
 /**
  * Get the midpoint
  *
- * @param {Number} x1
- * @param {Number} y1
- * @param {Number} x2
- * @param {Number} y2
+ * @param {Array} arr
  * @return {Object} coords
  * @api private
  */
 
-function midpoint(x1, y1, x2, y2) {
+function midpoint(arr) {
   var coords = {};
-  coords.x = (x1 + x2) / 2;
-  coords.y = (y1 + y2) / 2;
+  coords.x = (arr[0] + arr[2]) / 2;
+  coords.y = (arr[1] + arr[3]) / 2;
   return coords;
 }

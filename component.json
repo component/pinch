@@ -2,7 +2,7 @@
   "name": "pinch",
   "repo": "component/pinch",
   "description": "pinch in/out on elements",
-  "version": "0.0.1",
+  "version": "0.0.6",
   "keywords": ["pinch", "zoom", "mobile", "tablet"],
   "dependencies": {
     "component/events": "*"
@@ -10,6 +10,7 @@
   "license": "MIT",
   "main": "index.js",
   "scripts": [
-    "index.js"
+    "index.js",
+    "e.js"
   ]
 }
