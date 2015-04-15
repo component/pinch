@@ -2,7 +2,7 @@
  * Module dependencies
  */
 
-var events = require('events');
+var events = require('component-events');
 var E = require('./e');
 
 /**
